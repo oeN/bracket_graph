@@ -136,17 +136,36 @@ describe BracketGraph::DoubleEliminationGraph do
     expect(candidates.map(&:loser_to).uniq.count).to eq candidates.count
   end
 
-  it 'assigns loser_to links in a different order using the round oddity' do
-    subject = described_class.new 16
-    candidates = (subject.winner_seats - subject.winner_starting_seats).sort_by &:position
-    (1..subject.winner_root.round).each do |round|
-      round_candidates_positions = candidates.
-        select { |s| s.round == round }.
-        map { |c| c.loser_to.position }
-      if round.odd?
-        expect(round_candidates_positions).to eq round_candidates_positions.sort.reverse
-      else
-        expect(round_candidates_positions).to eq round_candidates_positions.sort
+  describe 'assigning the loser_to links' do
+    let(:candidates) { (subject.winner_seats - subject.winner_starting_seats).sort_by(&:position) }
+
+    def candidates_for_round round_index
+      candidates.select { |s| s.round == round_index }.map(&:loser_to).map(&:position)
+    end
+
+    context 'when the looser_seeding_style is set to :classic' do
+      subject { described_class.new 16 }
+
+      it 'the :classic way is to use a different order based on the round oddity' do
+        (1..subject.winner_root.round).each do |round|
+          round_candidates_positions = candidates_for_round(round)
+          if round.odd?
+            expect(round_candidates_positions).to eq round_candidates_positions.sort.reverse
+          else
+            expect(round_candidates_positions).to eq round_candidates_positions.sort
+          end
+        end
+      end
+    end
+
+    context 'when the looser_seeding_style is set to :swap_in_pair' do
+      subject { described_class.new(16, loser_seeding_style: :swap_in_pair) }
+
+      it 'swap looser position in pair every round' do
+        (2..subject.winner_root.round).each do |round|
+          round_candidates_positions = candidates_for_round(round)
+          expect(round_candidates_positions).to eq round_candidates_positions.sort.each_slice(2).map(&:reverse).flatten
+        end
       end
     end
   end

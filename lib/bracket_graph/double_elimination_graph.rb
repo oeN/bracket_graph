@@ -1,9 +1,10 @@
 module BracketGraph
   class DoubleEliminationGraph
     attr_reader :root
-    attr_reader :winner_graph, :loser_graph
+    attr_reader :winner_graph, :loser_graph, :loser_seeding_style
 
-    def initialize root_or_size
+    def initialize root_or_size, options = {}
+      @loser_seeding_style = options[:loser_seeding_style] || :classic
       if root_or_size.is_a? Seat
         @root = root_or_size
         @winner_graph = Graph.new @root.from[0]
@@ -112,7 +113,14 @@ module BracketGraph
       loser_candidates = loser_starting_seats_by_round
       winner_matches.each do |round, matches|
         candidates = loser_candidates[round]
-        candidates.reverse! if round.even?
+        if loser_seeding_style == :classic
+          candidates.reverse! if round.even?
+        elsif loser_seeding_style == :swap_in_pair && round != 1
+          # we want to swap the loser in pair, i.e.:
+          # [2, 4, 6, 8, 10, 12]
+          # [4, 2, 8, 6, 12, 10]
+          candidates = candidates.each_slice(2).map(&:reverse).flatten.reverse
+        end
         matches.each do |match|
           match.loser_to = candidates.pop
         end
