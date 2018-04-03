@@ -112,19 +112,27 @@ module BracketGraph
       winner_matches = winner_matches_by_round
       loser_candidates = loser_starting_seats_by_round
       winner_matches.each do |round, matches|
-        candidates = loser_candidates[round]
-        if loser_seeding_style == :classic
-          candidates.reverse! if round.even?
-        elsif loser_seeding_style == :swap_in_pair && round != 1
-          # we want to swap the loser in pair, i.e.:
-          # [2, 4, 6, 8, 10, 12]
-          # [4, 2, 8, 6, 12, 10]
-          candidates = candidates.each_slice(2).map(&:reverse).flatten.reverse
-        end
+        candidates = reorder_loser_candidates(loser_candidates[round], round)
         matches.each do |match|
           match.loser_to = candidates.pop
         end
       end
+    end
+
+    def reorder_loser_candidates candidates, round
+      if alternate_half_reverse?
+        power = Math.log2(candidates.size).ceil
+        half = candidates.size / 2
+        return candidates if power.odd? || half.zero?
+        return candidates.each_slice(half).map(&:reverse).flatten.reverse
+      end
+
+      return candidates.reverse if round.even?
+      candidates
+    end
+
+    def alternate_half_reverse?
+      loser_seeding_style == :alternate_half_reverse
     end
   end
 end

@@ -159,12 +159,50 @@ describe BracketGraph::DoubleEliminationGraph do
     end
 
     context 'when the looser_seeding_style is set to :swap_in_pair' do
-      subject { described_class.new(16, loser_seeding_style: :swap_in_pair) }
+      subject { nil }
+      let(:expected_loser_positions) { nil }
 
-      it 'swap looser position in pair every round' do
-        (2..subject.winner_root.round).each do |round|
-          round_candidates_positions = candidates_for_round(round)
-          expect(round_candidates_positions).to eq round_candidates_positions.sort.each_slice(2).map(&:reverse).flatten
+      context 'with 16 teams' do
+        subject { described_class.new(16, loser_seeding_style: :alternate_half_reverse) }
+        let(:expected_loser_positions) do
+          [
+            [1, [62, 61, 60, 59, 58, 57, 56, 55]],
+            [2, [50, 47, 54, 51]],
+            [3, []],
+            [4, [41, 39]],
+            [5, []],
+            [6, [35]]
+          ]
+        end
+
+        it 'swap looser position in pair every round' do
+          expected_loser_positions.each do |round, expected_positions|
+            round_candidates_positions = candidates_for_round(round)
+            expect(round_candidates_positions).to eq expected_positions
+          end
+        end
+      end
+
+      context 'with 32 teams' do
+        subject { described_class.new(32, loser_seeding_style: :alternate_half_reverse) }
+        let(:expected_loser_positions) do
+          [
+            [1, [118, 117, 116, 115, 114, 113, 112, 111, 126, 125, 124, 123, 122, 121, 120, 119]],
+            [2, [110, 108, 105, 103, 102, 100, 97, 95]],
+            [3, []],
+            [4, [82, 79, 86, 83]],
+            [5, []],
+            [6, [73, 71]],
+            [7, []],
+            [8, [67]]
+          ]
+        end
+
+        it 'swap looser position in pair every round' do
+          expected_loser_positions.each do |round, expected_positions|
+            round_candidates_positions = candidates_for_round(round)
+            expect(round_candidates_positions).to eq expected_positions
+          end
         end
       end
     end
